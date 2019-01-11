@@ -40,9 +40,14 @@
           .col
             input(type="number" min="0" max="20" v-model.number="process.duration" :id="'duration-p' + n")
             .spacer
-  section.scheduling-algorithm.bg-1.with-border-top
-    | #[i.fas.fa-chevron-circle-right] FCFS (first-come, first-served)
-  .chart-container.fcfs: div(ref="fcfs")
+  transition(name="fade" mode="out-in" @enter="simulate")
+    h1.not-generated-yet.bg-1(v-if="!hasSimulated")
+      | Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")] per iniziare la simulazione.
+    div(v-else)
+      section.scheduling-algorithm.bg-1.with-border-top
+        | #[i.fas.fa-chevron-circle-right] FCFS (first-come, first-served)
+      .chart-container.fcfs
+        div(ref="fcfs")
 </template>
 
 <style lang="scss">
@@ -50,26 +55,39 @@
 body {
   margin: 0;
   color: #212529;
+  height: 100vh;
+}
+#app, .main-container {
+  height: 100%;
 }
 .main-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
   // non selectable items
-  header, .configuration {
+  header, section {
     :not(input):not(textarea) {
       -webkit-user-select: none;
       user-select: none;
       cursor: default;
     }
   }
+  .scheduling-algorithm {
+    user-select: none;
+    cursor: default;
+  }
   .bg-1.with-border-top, .bg-2.with-border-top {
     border-top: 1px #3f464f solid;
   }
   .bg-1 {
     background-color: #343a40;
+    color: #fff;
   }
   .bg-2 {
     background-color: #2d3238;
+    color: #fff;
   }
   header {
     width: 100%;
@@ -179,6 +197,32 @@ body {
   .chart-container {
     padding: 8px;
   }
+
+  .not-generated-yet {
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    flex-wrap: wrap;
+    display: flex;
+    flex: 1;
+    margin: 0;
+    border-top: 1px white solid;
+    user-select: none;
+    cursor: default;
+    i {
+      color: lightgreen;
+      cursor: pointer;
+      margin: 0 .7rem;
+    }
+  }
+
+  // vuejs animation classes
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .5s;
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0;
+  }
 }
 </style>
 
@@ -218,13 +262,13 @@ const schedulingAlgorithms = {
         console.log('Execution of %s (startTime = %d, duration = %d, endtime = %d) finished.',
           currentlyExecuting.name, currentlyExecuting.startTime,
           currentlyExecuting.duration, currentTime)
-        simulationResults.push (currentlyExecuting)
+        simulationResults[currentlyExecuting.index] = currentlyExecuting
         currentlyExecuting = null
         continue // Continue without advancing the time.
       }
       ++currentTime
     }
-    return simulationResults.sort ((a, b) => a.index - b.index)
+    return simulationResults
   }
 }
 
@@ -258,7 +302,8 @@ export default {
     return {
       numberOfProcesses: 4,
       processes: [],
-      timelines: {}
+      timelines: {},
+      hasSimulated: false
     }
   },
   methods: {
@@ -275,8 +320,20 @@ export default {
       }
     },
     simulate () {
+      if (!this.hasSimulated) {
+        this.hasSimulated = true
+        // This triggers a re-render which actually makes available the different containers for
+        // the charts. Since the transition in animated, an event automatically calls 'simulate'
+        // again when the animations are done and the container elements are available. There's
+        // nothing more to do in this case.
+        // TODO: a possible optimization is to pre-compute the results of the different simulations
+        // until the DOM elements are available to render the charts.
+        return
+      }
       // Testing the FCFS scheduling algorithm.
+      console.time ('fcfs')
       let results = schedulingAlgorithms.fcfs (this.processes)
+      console.timeEnd ('fcfs')
       // Create the TimelinesChart object with the required configuration parameters.
       if (!this.timelines.fcfs)
         this.timelines.fcfs = TimelinesChart()(this.$refs.fcfs)

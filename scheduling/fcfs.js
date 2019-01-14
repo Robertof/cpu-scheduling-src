@@ -1,11 +1,9 @@
+import { sortByArrivalOrIndex } from '../scheduling'
+
+
 export default function fcfs (processes) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
-  let processQueue = processes.slice().sort ((a, b) => {
-    let cmp = a.arrival - b.arrival
-    if (!cmp)
-      return a.index - b.index
-    return cmp
-  })
+  let processQueue = sortByArrivalOrIndex (processes)
   let simulationResults = []
   let currentlyExecuting
   let currentTime = 0

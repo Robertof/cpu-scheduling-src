@@ -233,6 +233,7 @@ body {
 <script>
 import TimelinesChart from 'timelines-chart'
 import schedulingAlgorithms from '../scheduling'
+import debounce from 'lodash/debounce'
 
 function getRandomInt (min, max) {
   return Math.floor(Math.random() * (max - min)) + min
@@ -287,7 +288,7 @@ export default {
         })
       }
     },
-    simulate () {
+    simulate() {
       if (!this.hasSimulated) {
         this.hasSimulated = true
         // This triggers a re-render which actually makes available the different containers for
@@ -326,7 +327,11 @@ export default {
           .zColorScale (adjustedColorScale)
           .data (adaptData (results))
       }
-    }
+    },
+    onWindowResized: debounce (function() {
+      for (let chartName in this.timelines)
+        this.timelines[chartName].width (window.innerWidth)
+    }, 150)
   },
   watch: {
     numberOfProcesses (newValue, oldValue) {
@@ -341,6 +346,10 @@ export default {
   },
   mounted() {
     this.generateProcesses()
+    window.addEventListener ('resize', this.onWindowResized)
+  },
+  beforeDestroy() {
+    window.removeEventListener ('resize', this.onWindowResized)
   }
 
 }

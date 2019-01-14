@@ -1,7 +1,9 @@
 import fcfs from './fcfs'
+import sjf from './sjf'
 
 export default {
-  fcfs
+  fcfs,
+  sjf
 }
 
 export function sortByArrivalOrIndex (processes) {

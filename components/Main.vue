@@ -48,6 +48,10 @@
         | #[i.fas.fa-chevron-circle-right] FCFS (first-come, first-served)
       .chart-container.fcfs
         div(ref="fcfs")
+      section.scheduling-algorithm.bg-2.with-border-top
+        | #[i.fas.fa-chevron-circle-right] SJF (shortest job first)
+      .chart-container.sjf
+        div(ref="sjf")
 </template>
 
 <style lang="scss">
@@ -258,6 +262,8 @@ function adaptData (simulationResults) {
   }]
 }
 
+let adjustedColorScale
+
 export default {
   name: 'homepage',
   data() {
@@ -292,31 +298,34 @@ export default {
         // until the DOM elements are available to render the charts.
         return
       }
-      // Testing the FCFS scheduling algorithm.
-      console.time ('fcfs')
-      let results = schedulingAlgorithms.fcfs (this.processes)
-      console.timeEnd ('fcfs')
-      // Create the TimelinesChart object with the required configuration parameters.
-      if (!this.timelines.fcfs)
-        this.timelines.fcfs = TimelinesChart()(this.$refs.fcfs)
-          .enableOverview (false)
-          .xTickFormat (n => +n) // This is used to create our custom time scale without date units
-          .timeFormat ('%Q')
-          .zQualitative (true)
-      // This is sort of an hack. D3 uses different colors for the arrival and start time of
-      // processes, which doesn't look very good on the chart. To solve this, we retrieve the
-      // old color scale used by TimelinesChart and we pass to the original scale only the process
-      // name (P1, P2, P3, ...) instead of all the string ("Esecuzione P1", ...).
-      let oldScale = this.timelines.fcfs.zColorScale()
-      let newScale = v => oldScale (v.split (' ').pop())
-      newScale.domain = oldScale.domain
-      newScale.range = oldScale.range
-      newScale.unknown = oldScale.unknown
-      newScale.copy = oldScale.copy
-      // Finally pass the adapted data to TimelinesChart.
-      this.timelines.fcfs
-        .zColorScale(newScale)
-        .data (adaptData (results))
+      for (let algorithm in schedulingAlgorithms) {
+        console.time (algorithm)
+        let results = schedulingAlgorithms[algorithm](this.processes)
+        console.timeEnd (algorithm)
+        // Create the TimelinesChart object with the required configuration parameters.
+        if (!this.timelines[algorithm])
+          this.timelines[algorithm] = TimelinesChart()(this.$refs[algorithm])
+            .enableOverview (false)
+            .xTickFormat (n => +n) // This is used to create our custom time scale without date units
+            .timeFormat ('%Q')
+            .zQualitative (true)
+        if (!adjustedColorScale) {
+          // This is sort of an hack. D3 uses different colors for the arrival and start time of
+          // processes, which doesn't look very good on the chart. To solve this, we retrieve the
+          // old color scale used by TimelinesChart and we pass to the original scale only the
+          // process name (P1, P2, P3, ...) instead of all the string ("Esecuzione P1", ...).
+          let oldScale = this.timelines[algorithm].zColorScale()
+          adjustedColorScale = v => oldScale (v.split (' ').pop())
+          adjustedColorScale.domain = oldScale.domain
+          adjustedColorScale.range = oldScale.range
+          adjustedColorScale.unknown = oldScale.unknown
+          adjustedColorScale.copy = oldScale.copy
+        }
+        // Finally pass the adapted data to TimelinesChart.
+        this.timelines[algorithm]
+          .zColorScale (adjustedColorScale)
+          .data (adaptData (results))
+      }
     }
   },
   watch: {

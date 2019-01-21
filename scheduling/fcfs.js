@@ -1,4 +1,4 @@
-import { sortByArrivalOrIndex, markTimeForProcess } from '../scheduling'
+import { sortByArrivalOrIndex } from '../scheduling'
 
 export default function fcfs (processes) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
@@ -10,14 +10,11 @@ export default function fcfs (processes) {
     if (currentTime >= processQueue[0].arrival) {
       // Dequeue the topmost process.
       let pendingProcess = processQueue.shift()
-      markTimeForProcess (currentTime, pendingProcess)
-      // Fast forward to its end.
+      // Fast forward to its end and push the time interval corresponding to the execution time.
+      pendingProcess.addTimeInterval ([currentTime, currentTime + pendingProcess.duration])
       currentTime += pendingProcess.duration
-      markTimeForProcess (currentTime, pendingProcess)
-      simulationResults[pendingProcess.index] = pendingProcess
-      console.log('Execution of %s (startTime = %d, duration = %d, endtime = %d) finished.',
-        pendingProcess.name, pendingProcess.startTime,
-        pendingProcess.duration, currentTime)
+      console.log('Execution of %s finished at %d.', pendingProcess.toString(), currentTime)
+      simulationResults[pendingProcess.index] = pendingProcess.getSimulationResults()
       continue // Continue without advancing the time.
     }
     ++currentTime

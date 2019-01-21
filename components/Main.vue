@@ -236,7 +236,7 @@ body {
 
 <script>
 import TimelinesChart from 'timelines-chart'
-import schedulingAlgorithms, { START_TIME, END_TIME } from '../scheduling'
+import schedulingAlgorithms, { Process, START_TIME, END_TIME } from '../scheduling'
 import debounce from 'lodash/debounce'
 
 function getRandomInt (min, max) {
@@ -248,14 +248,13 @@ function adaptData (simulationResults) {
   return [{
     group: '',
     data: simulationResults.map (p => {
-      let data = p.times.map (time => ({
+      let data = p.timeIntervals.map (time => ({
         timeRange: [time[START_TIME], time[END_TIME]],
         val: 'Esecuzione ' + p.name
       }))
-      delete p.times // Cleanup.
       // If the process start time isn't equal to its arrival, add an additional segment to the
       // graph corresponding to its arrival time.
-      if (p.startTime !== p.arrival)
+      if (p.timeIntervals[0][START_TIME] !== p.arrival)
         data.unshift ({
           timeRange: [p.arrival, p.arrival],
           val: 'Arrivo ' + p.name
@@ -285,12 +284,11 @@ export default {
       if (fromScratch && this.processes.length)
         this.processes.length = 0
       for (let i = this.processes.length; i < this.numberOfProcesses; ++i) {
-        this.processes.push ({
-          name: 'P' + (i + 1),
+        this.processes.push (new Process ({
           index: i,
           arrival: getRandomInt (0, 16),
           duration: getRandomInt (1, 11)
-        })
+        }))
       }
     },
     simulate() {
@@ -304,7 +302,6 @@ export default {
         // until the DOM elements are available to render the charts.
         return
       }
-      window.schedProcs = this.processes
       for (let algorithm in schedulingAlgorithms) {
         console.time (algorithm)
         let results = schedulingAlgorithms[algorithm](this.processes)
@@ -352,7 +349,6 @@ export default {
   },
   mounted() {
     this.generateProcesses()
-    window.schedAlgs = schedulingAlgorithms
     window.addEventListener ('resize', this.onWindowResized)
   },
   beforeDestroy() {

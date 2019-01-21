@@ -1,4 +1,4 @@
-import { sortByArrivalOrIndex } from '../scheduling'
+import { sortByArrivalOrIndex, markTimeForProcess } from '../scheduling'
 
 export default function fcfs (processes) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
@@ -10,10 +10,10 @@ export default function fcfs (processes) {
     if (currentTime >= processQueue[0].arrival) {
       // Dequeue the topmost process.
       let pendingProcess = processQueue.shift()
-      pendingProcess.startTime = currentTime
+      markTimeForProcess (currentTime, pendingProcess)
       // Fast forward to its end.
       currentTime += pendingProcess.duration
-      pendingProcess.endTime = currentTime
+      markTimeForProcess (currentTime, pendingProcess)
       simulationResults[pendingProcess.index] = pendingProcess
       console.log('Execution of %s (startTime = %d, duration = %d, endtime = %d) finished.',
         pendingProcess.name, pendingProcess.startTime,

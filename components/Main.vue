@@ -52,6 +52,10 @@
         | #[i.fas.fa-chevron-circle-right] SJF (shortest job first)
       .chart-container.sjf
         div(ref="sjf")
+      section.scheduling-algorithm.bg-1.with-border-top
+        | #[i.fas.fa-chevron-circle-right] SJF preemptive (shortest job first)
+      .chart-container.sjfPreemptive
+        div(ref="sjfPreemptive")
 </template>
 
 <style lang="scss">
@@ -232,7 +236,7 @@ body {
 
 <script>
 import TimelinesChart from 'timelines-chart'
-import schedulingAlgorithms from '../scheduling'
+import schedulingAlgorithms, { START_TIME, END_TIME } from '../scheduling'
 import debounce from 'lodash/debounce'
 
 function getRandomInt (min, max) {
@@ -244,10 +248,11 @@ function adaptData (simulationResults) {
   return [{
     group: '',
     data: simulationResults.map (p => {
-      let data = [{
-        timeRange: [p.startTime, p.endTime],
+      let data = p.times.map (time => ({
+        timeRange: [time[START_TIME], time[END_TIME]],
         val: 'Esecuzione ' + p.name
-      }]
+      }))
+      delete p.times // Cleanup.
       // If the process start time isn't equal to its arrival, add an additional segment to the
       // graph corresponding to its arrival time.
       if (p.startTime !== p.arrival)
@@ -299,6 +304,7 @@ export default {
         // until the DOM elements are available to render the charts.
         return
       }
+      window.schedProcs = this.processes
       for (let algorithm in schedulingAlgorithms) {
         console.time (algorithm)
         let results = schedulingAlgorithms[algorithm](this.processes)
@@ -346,11 +352,11 @@ export default {
   },
   mounted() {
     this.generateProcesses()
+    window.schedAlgs = schedulingAlgorithms
     window.addEventListener ('resize', this.onWindowResized)
   },
   beforeDestroy() {
     window.removeEventListener ('resize', this.onWindowResized)
   }
-
 }
 </script>

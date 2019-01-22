@@ -1,5 +1,5 @@
 import fcfs from './fcfs'
-import sjf from './sjf'
+import { sjf, sjfPreemptive } from './sjf'
 
 export const START_TIME = 0
 export const END_TIME = 1
@@ -7,7 +7,7 @@ export const END_TIME = 1
 export default {
   fcfs,
   sjf,
-  sjfPreemptive: processes => sjf (processes, { isPreemptive: true })
+  sjfPreemptive
 }
 
 export class Process {

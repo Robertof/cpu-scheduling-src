@@ -44,18 +44,11 @@
     h1.not-generated-yet.bg-1(v-if="!hasSimulated")
       | Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")] per iniziare la simulazione.
     div(v-else)
-      section.scheduling-algorithm.bg-1.with-border-top
-        | #[i.fas.fa-chevron-circle-right] FCFS (first-come, first-served)
-      .chart-container.fcfs
-        div(ref="fcfs")
-      section.scheduling-algorithm.bg-2.with-border-top
-        | #[i.fas.fa-chevron-circle-right] SJF (shortest job first)
-      .chart-container.sjf
-        div(ref="sjf")
-      section.scheduling-algorithm.bg-1.with-border-top
-        | #[i.fas.fa-chevron-circle-right] SJF preemptive (shortest job first)
-      .chart-container.sjfPreemptive
-        div(ref="sjfPreemptive")
+      template(v-for="(algorithm, codename) in schedulingAlgorithms")
+        section.scheduling-algorithm.with-border-to.bg-1
+          | #[i.fas.fa-chevron-circle-right] {{ algorithm.metadata.name }}
+        .chart-container(:class="codename")
+          div(:ref="codename")
 </template>
 
 <style lang="scss">
@@ -279,6 +272,9 @@ export default {
       hasSimulated: false
     }
   },
+  computed: {
+    schedulingAlgorithms: () => schedulingAlgorithms
+  },
   methods: {
     generateProcesses ({ fromScratch } = {}) {
       if (fromScratch && this.processes.length)
@@ -308,7 +304,7 @@ export default {
         console.timeEnd (algorithm)
         // Create the TimelinesChart object with the required configuration parameters.
         if (!this.timelines[algorithm])
-          this.timelines[algorithm] = TimelinesChart()(this.$refs[algorithm])
+          this.timelines[algorithm] = TimelinesChart()(this.$refs[algorithm][0])
             .enableOverview (false)
             .xTickFormat (n => +n) // This is used to create our custom time scale without date units
             .timeFormat ('%Q')

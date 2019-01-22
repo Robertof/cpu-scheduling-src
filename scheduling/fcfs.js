@@ -1,6 +1,6 @@
 import { sortByArrivalOrIndex } from '../scheduling'
 
-export default function fcfs (processes) {
+function fcfs (processes) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
   let processQueue = sortByArrivalOrIndex (processes)
   let simulationResults = []
@@ -21,3 +21,13 @@ export default function fcfs (processes) {
   }
   return simulationResults
 }
+
+fcfs.metadata = {
+  name: 'FCFS (First-Come, First-Served)',
+  tooltip: `
+    Questo algoritmo esegue per primi i processi che arrivano per primi, lavorando come una lista
+    FIFO (first-in, first-out).
+  `
+}
+
+export default fcfs

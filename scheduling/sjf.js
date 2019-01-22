@@ -8,7 +8,7 @@ import { sortByArrivalOrIndex } from '../scheduling'
  * P3 / 6       / 5
  * P4 / 1       / 10
  */
-export default function sjf (processes, { isPreemptive = false } = {}) {
+function sjf (processes, { isPreemptive = false } = {}) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
   let remainingProcesses = sortByArrivalOrIndex (processes)
   let processQueue = []
@@ -108,3 +108,26 @@ export default function sjf (processes, { isPreemptive = false } = {}) {
   }
   return simulationResults
 }
+
+function sjfPreemptive (p) {
+  return sjf (p, { isPreemptive: true })
+}
+
+sjfPreemptive.metadata = {
+  name: 'SJF (Shortest Job First) Preemptive',
+  tooltip: `
+    Il funzionamento è identico al SJF, con la differenza che l'arrivo di un processo di durata
+    minore rispetto a quello attualmente in esecuzione porta quello attuale ad essere
+    prelazionato da quello nuovo.
+  `
+}
+
+sjf.metadata = {
+  name: 'SJF (Shortest Job First)',
+  tooltip: `
+    Questo algoritmo seleziona i processi da eseguire in base alla durata dei processi stessi.
+    I processi più brevi sono eseguiti per primi, ottimizzando il tempo di attesa media.
+  `
+}
+
+export { sjf, sjfPreemptive }

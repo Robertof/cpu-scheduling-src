@@ -44,9 +44,17 @@
     h1.not-generated-yet.bg-1(v-if="!hasSimulated")
       | Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")] per iniziare la simulazione.
     div(v-else)
-      template(v-for="(algorithm, codename) in schedulingAlgorithms")
-        section.scheduling-algorithm.with-border-to.bg-1
-          | #[i.fas.fa-chevron-circle-right] {{ algorithm.metadata.name }}
+      template(v-for="(algorithm, codename, index) in schedulingAlgorithms")
+        section.scheduling-algorithm(:class=`{
+          'with-border-top': !index,
+          'bg-1': !(index % 2),
+          'bg-2': !!(index % 2)
+        }`)
+          .algorithm-name-container
+            | #[i.fas.fa-chevron-circle-right] 
+            span.algorithm-name(v-tooltip="algorithm.metadata.tooltip") {{ algorithm.metadata.name }}
+          // TODO .algorithm-props X
+          .clearfix
         .chart-container(:class="codename")
           div(:ref="codename")
 </template>
@@ -57,13 +65,13 @@ body {
   margin: 0;
   color: #212529;
   height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 14px;
 }
 #app, .main-container {
   height: 100%;
 }
 .main-container {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  font-size: 14px;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -74,10 +82,6 @@ body {
       user-select: none;
       cursor: default;
     }
-  }
-  .scheduling-algorithm {
-    user-select: none;
-    cursor: default;
   }
   .bg-1.with-border-top, .bg-2.with-border-top {
     border-top: 1px #3f464f solid;
@@ -193,6 +197,20 @@ body {
     color: #fff;
     padding: 4px;
     font-size: 1rem;
+    .algorithm-name-container {
+      float: left;
+      .algorithm-name {
+        user-select: none;
+        cursor: help;
+        border-bottom: 1px white dotted;
+      }
+    }
+    .algorithm-props {
+      float: right;
+    }
+    .clearfix {
+      clear: both;
+    }
   }
 
   .chart-container {
@@ -223,6 +241,119 @@ body {
   }
   .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
     opacity: 0;
+  }
+}
+
+ // tooltips
+.tooltip {
+  display: block !important;
+  z-index: 10000;
+ 
+  .tooltip-inner {
+    background: rgba(#004499, .9);
+    color: white;
+    border-radius: 5px;
+    padding: 16px;
+    max-width: 40vw;
+    box-shadow: 0 5px 30px rgba(black, .1);
+  }
+ 
+  .tooltip-arrow {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    position: absolute;
+    margin: 5px;
+    border-color: rgba(#004499, .9);
+    z-index: 1;
+  }
+ 
+  &[x-placement^="top"] {
+    margin-bottom: 5px;
+ 
+    .tooltip-arrow {
+      border-width: 5px 5px 0 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      bottom: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+ 
+  &[x-placement^="bottom"] {
+    margin-top: 5px;
+ 
+    .tooltip-arrow {
+      border-width: 0 5px 5px 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-top-color: transparent !important;
+      top: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+ 
+  &[x-placement^="right"] {
+    margin-left: 5px;
+ 
+    .tooltip-arrow {
+      border-width: 5px 5px 5px 0;
+      border-left-color: transparent !important;
+      border-top-color: transparent !important;
+      border-bottom-color: transparent !important;
+      left: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+ 
+  &[x-placement^="left"] {
+    margin-right: 5px;
+ 
+    .tooltip-arrow {
+      border-width: 5px 0 5px 5px;
+      border-top-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      right: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+ 
+  &.popover {
+    $color: #f9f9f9;
+ 
+    .popover-inner {
+      background: $color;
+      color: black;
+      padding: 24px;
+      border-radius: 5px;
+      box-shadow: 0 5px 30px rgba(black, .1);
+    }
+ 
+    .popover-arrow {
+      border-color: $color;
+    }
+  }
+
+  &[aria-hidden='true'] {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .15s, visibility .15s;
+  }
+ 
+  &[aria-hidden='false'] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity .15s;
   }
 }
 </style>
@@ -291,7 +422,7 @@ export default {
       if (!this.hasSimulated) {
         this.hasSimulated = true
         // This triggers a re-render which actually makes available the different containers for
-        // the charts. Since the transition in animated, an event automatically calls 'simulate'
+        // the charts. Since the transition is animated, an event automatically calls 'simulate'
         // again when the animations are done and the container elements are available. There's
         // nothing more to do in this case.
         // TODO: a possible optimization is to pre-compute the results of the different simulations

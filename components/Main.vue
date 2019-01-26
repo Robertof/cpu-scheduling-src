@@ -23,9 +23,15 @@
           each num in [...Array(5).keys()]
             option= num + 2
       li
-        i.fas.fa-redo.regenerate-button(@click="generateProcesses ({ fromScratch: true })")
+        i.fas.fa-redo.regenerate-button(
+          @click="generateProcesses ({ fromScratch: true })"
+          v-tooltip="{ content: 'Rigenera dati', classes: ['small'] }"
+        )
       li
-        i.fas.fa-play.simulate-button(@click="simulate")
+        i.fas.fa-play.simulate-button(
+          @click="simulate"
+          v-tooltip="{ content: 'Inizia simulazione', classes: ['small'] }"
+        )
     span(v-if="false") } // fixes syntax highlighting in sublime text
     .row.process-config
       .col-sm(v-for="(process, n) in processes")
@@ -34,29 +40,54 @@
         .row
           .col: label(:for="'arrival-p' + n") Arrivo:
           .col
-            input(type="number" min="0" max="50" v-model.number="process.arrival" :id="'arrival-p' + n")
+            input(
+              type="number" min="0" max="50"
+              v-model.number="process.arrival" :id="'arrival-p' + n"
+            )
         .row
           .col: label(:for="'duration-p' + n") Durata:
           .col
-            input(type="number" min="0" max="20" v-model.number="process.duration" :id="'duration-p' + n")
+            input(
+              type="number" min="0" max="20"
+              v-model.number="process.duration" :id="'duration-p' + n"
+            )
             .spacer
   transition(name="fade" mode="out-in" @enter="simulate")
-    h1.not-generated-yet.bg-1(v-if="!hasSimulated")
-      | Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")] per iniziare la simulazione.
+    h1.not-generated-yet.bg-1(v-if="!hasSimulated").
+      Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")]
+      per iniziare la simulazione.
     div(v-else)
-      template(v-for="(algorithm, codename, index) in schedulingAlgorithms")
-        section.scheduling-algorithm(:class=`{
-          'with-border-top': !index,
-          'bg-1': !(index % 2),
-          'bg-2': !!(index % 2)
-        }`)
-          .algorithm-name-container
-            | #[i.fas.fa-chevron-circle-right] 
-            span.algorithm-name(v-tooltip="algorithm.metadata.tooltip") {{ algorithm.metadata.name }}
-          // TODO .algorithm-props X
-          .clearfix
-        .chart-container(:class="codename")
-          div(:ref="codename")
+      //- simulationData is pre-filled with the available algorithm names.
+      template(v-for="(data, algorithmName, index) in simulationData")
+        //- To ease access to the single algorithm's metadata, which is in another object, we
+        //- use a passthrough component which binds the "metadata" variable in a slot scope, which
+        //- greatly simplifies its access.
+        Passthrough(:metadata="schedulingAlgorithms[algorithmName].metadata")
+          section.scheduling-algorithm(
+            slot-scope="{ metadata }"
+            :class=`{
+              'with-border-top': !index,
+              'bg-1': !(index % 2),
+              'bg-2': !!(index % 2)
+            }`
+          )
+            .algorithm-name-container
+              | #[i.fas.fa-chevron-circle-right] 
+              span.algorithm-name(v-tooltip="metadata.tooltip")
+                | {{ metadata.name }}
+            .algorithm-props
+              ul
+                li.average-waiting-time(
+                  v-if="data && 'averageWaitingTime' in data"
+                  v-tooltip=`{
+                    content: 'Tempo di attesa medio per i processi',
+                    classes: ['small']
+                  }`
+                )
+                  | #[i.fas.fa-clock] #[span {{ data.averageWaitingTime.toLocaleString() }}]
+            .clearfix
+        .chart-container(:class="algorithmName")
+          div(:ref="algorithmName")
 </template>
 
 <style lang="scss">
@@ -64,12 +95,12 @@
 body {
   margin: 0;
   color: #212529;
-  height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 14px;
 }
-#app, .main-container {
-  height: 100%;
+body, #app, .main-container {
+  min-height: 100vh;
 }
 .main-container {
   display: flex;
@@ -83,16 +114,17 @@ body {
       cursor: default;
     }
   }
-  .bg-1.with-border-top, .bg-2.with-border-top {
-    border-top: 1px #3f464f solid;
+  .bg-1, .bg-2 {
+    color: #fff;
+    &.with-border-top {
+      border-top: 1px #3f464f solid;
+    }
   }
   .bg-1 {
     background-color: #343a40;
-    color: #fff;
   }
   .bg-2 {
     background-color: #2d3238;
-    color: #fff;
   }
   header {
     width: 100%;
@@ -207,6 +239,24 @@ body {
     }
     .algorithm-props {
       float: right;
+      ul, li {
+        display: inline;
+        list-style-type: none;
+      }
+      li:not(:last-child):after {
+        content: "\200b"; // zero width space
+        width: 1px;
+        background-color: #fff;
+        display: inline-block;
+        margin: 0 10px;
+      }
+      i {
+        margin-right: 2px;
+      }
+      .average-waiting-time span {
+        border-bottom: 1px white dotted;
+        user-select: auto;
+      }
     }
     .clearfix {
       clear: both;
@@ -248,6 +298,10 @@ body {
 .tooltip {
   display: block !important;
   z-index: 10000;
+
+  &.small .tooltip-inner {
+    padding: 5px 10px 4px;
+  }
  
   .tooltip-inner {
     background: rgba(#004499, .9);
@@ -362,22 +416,36 @@ body {
 import TimelinesChart from 'timelines-chart'
 import schedulingAlgorithms, { Process, START_TIME, END_TIME } from '../scheduling'
 import debounce from 'lodash/debounce'
+import fromPairs from 'lodash/fromPairs'
+
+// Pass-through component to allow easy mounting of pre-computed values.
+// Cheers to https://dev.to/loilo92/an-approach-to-vuejs-template-variables-5aik
+const Passthrough = {
+  render() {
+    return this.$scopedSlots.default (this.$attrs)
+  }
+}
 
 function getRandomInt (min, max) {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
 // Adapts data returned from schedulers for use with the charting library.
-function adaptData (simulationResults) {
-  return [{
+// This also calculates the average waiting time.
+function processSimulationResults (simulationResults) {
+  let waitingTimes = 0
+  const adaptedData = [{
     group: '',
     data: simulationResults.map (p => {
+      // Calculate the waiting time for this process.
+      // t = end_time - duration - arrival
+      waitingTimes += p.timeIntervals[p.timeIntervals.length-1][END_TIME] - p.duration - p.arrival
       let data = p.timeIntervals.map (time => ({
         timeRange: [time[START_TIME], time[END_TIME]],
         val: 'Esecuzione ' + p.name
       }))
       // If the process start time isn't equal to its arrival, add an additional segment to the
-      // graph corresponding to its arrival time.
+      // chart corresponding to its arrival time.
       if (p.timeIntervals[0][START_TIME] !== p.arrival)
         data.unshift ({
           timeRange: [p.arrival, p.arrival],
@@ -389,17 +457,26 @@ function adaptData (simulationResults) {
       }
     })
   }]
+  return {
+    adaptedData,
+    averageWaitingTime: waitingTimes / simulationResults.length // (w1 + w2 + wn) / n
+  }
 }
 
 let adjustedColorScale
 
 export default {
   name: 'homepage',
+  components: { Passthrough },
   data() {
     return {
       numberOfProcesses: 4,
       processes: [],
-      timelines: {},
+      // Contains miscellaneous data about single algorithms, such as the timeline objects, config
+      // options, waiting times, ...
+      // The object is pre-populated with a basic structure of `{ alg_name: {} }` to allow proper
+      // pre-rendering of the DOM.
+      simulationData: fromPairs (Object.keys (schedulingAlgorithms).map (k => [k, {}])),
       hasSimulated: false
     }
   },
@@ -433,11 +510,12 @@ export default {
         console.time (algorithm)
         let results = schedulingAlgorithms[algorithm](this.processes)
         console.timeEnd (algorithm)
+        const context = this.simulationData[algorithm]
         // Create the TimelinesChart object with the required configuration parameters.
-        if (!this.timelines[algorithm])
-          this.timelines[algorithm] = TimelinesChart()(this.$refs[algorithm][0])
+        if (!('timeline' in context))
+          context.timeline = TimelinesChart()(this.$refs[algorithm][0])
             .enableOverview (false)
-            .xTickFormat (n => +n) // This is used to create our custom time scale without date units
+            .xTickFormat (n => +n) // Used to create our custom time scale without date units
             .timeFormat ('%Q')
             .zQualitative (true)
         if (!adjustedColorScale) {
@@ -445,22 +523,26 @@ export default {
           // processes, which doesn't look very good on the chart. To solve this, we retrieve the
           // old color scale used by TimelinesChart and we pass to the original scale only the
           // process name (P1, P2, P3, ...) instead of all the string ("Esecuzione P1", ...).
-          let oldScale = this.timelines[algorithm].zColorScale()
+          let oldScale = context.timeline.zColorScale()
           adjustedColorScale = v => oldScale (v.split (' ').pop())
           adjustedColorScale.domain = oldScale.domain
           adjustedColorScale.range = oldScale.range
           adjustedColorScale.unknown = oldScale.unknown
           adjustedColorScale.copy = oldScale.copy
         }
+        // Adapt the data in a format suitable for the chart and calculate the average waiting time
+        const { averageWaitingTime, adaptedData } = processSimulationResults (results)
+        this.$set (context, 'averageWaitingTime', averageWaitingTime)
         // Finally pass the adapted data to TimelinesChart.
-        this.timelines[algorithm]
+        context.timeline
           .zColorScale (adjustedColorScale)
-          .data (adaptData (results))
+          .data (adaptedData)
       }
     },
     onWindowResized: debounce (function() {
-      for (let chartName in this.timelines)
-        this.timelines[chartName].width (window.innerWidth)
+      for (let algorithmName in this.simulationData)
+        this.simulationData[algorithmName].timeline &&
+          this.simulationData[algorithmName].timeline.width (window.innerWidth)
     }, 150)
   },
   watch: {

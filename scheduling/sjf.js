@@ -126,7 +126,7 @@ sjf.metadata = {
   name: 'SJF (Shortest Job First)',
   tooltip: `
     Questo algoritmo seleziona i processi da eseguire in base alla durata dei processi stessi.
-    I processi più brevi sono eseguiti per primi, ottimizzando il tempo di attesa media.
+    I processi più brevi sono eseguiti per primi, ottimizzando il tempo di attesa medio.
   `
 }
 

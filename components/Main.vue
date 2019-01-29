@@ -29,7 +29,7 @@
         )
       li
         i.fas.fa-play.simulate-button(
-          @click="simulate"
+          @click="simulateAll"
           v-tooltip="{ content: 'Inizia simulazione', classes: ['small'] }"
         )
     span(v-if="false") } // fixes syntax highlighting in sublime text
@@ -52,13 +52,13 @@
               v-model.number="process.duration" :id="'duration-p' + n"
             )
             .spacer
-  transition(name="fade" mode="out-in" @enter="simulate")
+  transition(name="fade" mode="out-in" @enter="simulateAll")
     h1.not-generated-yet.bg-1(v-if="!hasSimulated").
-      Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulate")]
+      Premi sul tasto #[i.fas.fa-play.simulate-button(@click="simulateAll")]
       per iniziare la simulazione.
     div(v-else)
-      //- simulationData is pre-filled with the available algorithm names.
-      template(v-for="(data, algorithmName, index) in simulationData")
+      //- schedulerData is pre-filled with the available algorithm names.
+      template(v-for="(data, algorithmName, index) in schedulerData")
         //- To ease access to the single algorithm's metadata, which is in another object, we
         //- use a passthrough component which binds the "metadata" variable in a slot scope, which
         //- greatly simplifies its access.
@@ -77,6 +77,11 @@
                 | {{ metadata.name }}
             .algorithm-props
               ul
+                li.component-settings(v-if="metadata.components && metadata.components.inlineSettings")
+                  component(
+                    :is="metadata.components.inlineSettings"
+                    @config-changed="onSchedulerConfigurationChanged (algorithmName, $event)"
+                  )
                 li.average-waiting-time(
                   v-if="data && 'averageWaitingTime' in data"
                   v-tooltip=`{
@@ -253,9 +258,14 @@ body, #app, .main-container {
       i {
         margin-right: 2px;
       }
-      .average-waiting-time span {
-        border-bottom: 1px white dotted;
-        user-select: auto;
+      .average-waiting-time {
+        &, span, i {
+          cursor: help;
+        }
+        span {
+          border-bottom: 1px white dotted;
+          user-select: auto;
+        }
       }
     }
     .clearfix {
@@ -476,7 +486,7 @@ export default {
       // options, waiting times, ...
       // The object is pre-populated with a basic structure of `{ alg_name: {} }` to allow proper
       // pre-rendering of the DOM.
-      simulationData: fromPairs (Object.keys (schedulingAlgorithms).map (k => [k, {}])),
+      schedulerData: fromPairs (Object.keys (schedulingAlgorithms).map (k => [k, {}])),
       hasSimulated: false
     }
   },
@@ -495,7 +505,39 @@ export default {
         }))
       }
     },
-    simulate() {
+    simulate (algorithm) {
+      const context = this.schedulerData[algorithm]
+      console.time (algorithm)
+      let results = schedulingAlgorithms[algorithm](this.processes, context.config)
+      console.timeEnd (algorithm)
+      // Create the TimelinesChart object with the required configuration parameters.
+      if (!('timeline' in context))
+        context.timeline = TimelinesChart()(this.$refs[algorithm][0])
+          .enableOverview (false)
+          .xTickFormat (n => +n) // Used to create our custom time scale without date units
+          .timeFormat ('%Q')
+          .zQualitative (true)
+      if (!adjustedColorScale) {
+        // This is sort of an hack. D3 uses different colors for the arrival and start time of
+        // processes, which doesn't look very good on the chart. To solve this, we retrieve the
+        // old color scale used by TimelinesChart and we pass to the original scale only the
+        // process name (P1, P2, P3, ...) instead of all the string ("Esecuzione P1", ...).
+        let oldScale = context.timeline.zColorScale()
+        adjustedColorScale = v => oldScale (v.split (' ').pop())
+        adjustedColorScale.domain = oldScale.domain
+        adjustedColorScale.range = oldScale.range
+        adjustedColorScale.unknown = oldScale.unknown
+        adjustedColorScale.copy = oldScale.copy
+      }
+      // Adapt the data in a format suitable for the chart and calculate the average waiting time
+      const { averageWaitingTime, adaptedData } = processSimulationResults (results)
+      this.$set (context, 'averageWaitingTime', averageWaitingTime)
+      // Finally pass the adapted data to TimelinesChart.
+      context.timeline
+        .zColorScale (adjustedColorScale)
+        .data (adaptedData)
+    },
+    simulateAll() {
       if (!this.hasSimulated) {
         this.hasSimulated = true
         // This triggers a re-render which actually makes available the different containers for
@@ -507,42 +549,17 @@ export default {
         return
       }
       for (let algorithm in schedulingAlgorithms) {
-        console.time (algorithm)
-        let results = schedulingAlgorithms[algorithm](this.processes)
-        console.timeEnd (algorithm)
-        const context = this.simulationData[algorithm]
-        // Create the TimelinesChart object with the required configuration parameters.
-        if (!('timeline' in context))
-          context.timeline = TimelinesChart()(this.$refs[algorithm][0])
-            .enableOverview (false)
-            .xTickFormat (n => +n) // Used to create our custom time scale without date units
-            .timeFormat ('%Q')
-            .zQualitative (true)
-        if (!adjustedColorScale) {
-          // This is sort of an hack. D3 uses different colors for the arrival and start time of
-          // processes, which doesn't look very good on the chart. To solve this, we retrieve the
-          // old color scale used by TimelinesChart and we pass to the original scale only the
-          // process name (P1, P2, P3, ...) instead of all the string ("Esecuzione P1", ...).
-          let oldScale = context.timeline.zColorScale()
-          adjustedColorScale = v => oldScale (v.split (' ').pop())
-          adjustedColorScale.domain = oldScale.domain
-          adjustedColorScale.range = oldScale.range
-          adjustedColorScale.unknown = oldScale.unknown
-          adjustedColorScale.copy = oldScale.copy
-        }
-        // Adapt the data in a format suitable for the chart and calculate the average waiting time
-        const { averageWaitingTime, adaptedData } = processSimulationResults (results)
-        this.$set (context, 'averageWaitingTime', averageWaitingTime)
-        // Finally pass the adapted data to TimelinesChart.
-        context.timeline
-          .zColorScale (adjustedColorScale)
-          .data (adaptedData)
+        this.simulate (algorithm)
       }
     },
+    onSchedulerConfigurationChanged (scheduler, newConfiguration) {
+      this.schedulerData[scheduler].config = newConfiguration
+      this.simulate (scheduler)
+    },
     onWindowResized: debounce (function() {
-      for (let algorithmName in this.simulationData)
-        this.simulationData[algorithmName].timeline &&
-          this.simulationData[algorithmName].timeline.width (window.innerWidth)
+      for (let algorithmName in this.schedulerData)
+        this.schedulerData[algorithmName].timeline &&
+          this.schedulerData[algorithmName].timeline.width (window.innerWidth)
     }, 150)
   },
   watch: {

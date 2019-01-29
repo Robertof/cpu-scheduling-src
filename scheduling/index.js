@@ -1,5 +1,6 @@
 import fcfs from './fcfs'
 import { sjf, sjfPreemptive } from './sjf'
+import roundRobin from './round-robin'
 
 export const START_TIME = 0
 export const END_TIME = 1
@@ -7,7 +8,8 @@ export const END_TIME = 1
 export default {
   fcfs,
   sjf,
-  sjfPreemptive
+  sjfPreemptive,
+  roundRobin
 }
 
 export class Process {

@@ -20,7 +20,7 @@
       li
         | Numero processi:
         select(v-model="numberOfProcesses")
-          each num in [...Array(5).keys()]
+          each num in [...Array(9).keys()]
             option= num + 2
       li
         i.fas.fa-redo.regenerate-button(

@@ -1,13 +1,5 @@
 import { sortByArrivalOrIndex } from '../scheduling'
 
-/*
- * TODO: discuss this case with the professor.
- * P# / arrival / duration
- * P1 / 9       / 8
- * P2 / 7       / 8
- * P3 / 6       / 5
- * P4 / 1       / 10
- */
 function sjf (processes, { isPreemptive = false } = {}) {
   // Sort the processes by their arrival time or their index if the arrival time is equal.
   let remainingProcesses = sortByArrivalOrIndex (processes)

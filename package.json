@@ -1,6 +1,6 @@
 {
   "name": "so-project-src",
-  "version": "0.1",
+  "version": "1.0.0",
   "main": "main.js",
   "repository": "Robertof/cpu-scheduling-src",
   "author": "Roberto Frenna <roberto@frenna.pro>",

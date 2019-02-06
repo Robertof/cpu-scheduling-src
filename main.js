@@ -13,6 +13,5 @@ Vue.use (VTooltip)
 
 /* eslint-disable no-new */
 new Vue({
-  components: { App },
-  template: '<App/>'
-}).$mount('#app')
+  render: h => h (App)
+}).$mount ('#app')

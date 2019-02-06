@@ -1,0 +1,15 @@
+{
+  "name": "so-project-src",
+  "version": "0.1",
+  "main": "main.js",
+  "repository": "Robertof/cpu-scheduling-src",
+  "author": "Roberto Frenna <roberto@frenna.pro>",
+  "license": "MIT",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.7.1",
+    "bootstrap-css-only": "^4.2.1",
+    "lodash-es": "^4.17.11",
+    "timelines-chart": "^2.8.1",
+    "v-tooltip": "^2.0.0-rc.33"
+  }
+}

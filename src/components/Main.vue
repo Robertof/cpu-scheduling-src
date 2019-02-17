@@ -275,6 +275,7 @@ body, #app, .main-container {
 
   .chart-container {
     padding: 8px;
+    background-color: #fff;
   }
 
   .not-generated-yet {

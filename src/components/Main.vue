@@ -476,7 +476,7 @@ function processSimulationResults (simulationResults) {
 let adjustedColorScale
 
 export default {
-  name: 'homepage',
+  name: 'Homepage',
   components: { Passthrough },
   data() {
     return {
@@ -492,6 +492,24 @@ export default {
   },
   computed: {
     schedulingAlgorithms: () => schedulingAlgorithms
+  },
+  watch: {
+    numberOfProcesses (newValue, oldValue) {
+      newValue = parseInt (newValue, 10)
+      oldValue = parseInt (oldValue, 10)
+      if (newValue < oldValue) { // user removed some processes from the list
+        const delta = oldValue - newValue
+        this.processes.splice (-delta, delta)
+      } else
+        this.generateProcesses()
+    }
+  },
+  mounted() {
+    this.generateProcesses()
+    window.addEventListener ('resize', this.onWindowResized)
+  },
+  beforeDestroy() {
+    window.removeEventListener ('resize', this.onWindowResized)
   },
   methods: {
     generateProcesses ({ fromScratch } = {}) {
@@ -561,24 +579,6 @@ export default {
         this.schedulerData[algorithmName].timeline &&
           this.schedulerData[algorithmName].timeline.width (window.innerWidth)
     }, 150)
-  },
-  watch: {
-    numberOfProcesses (newValue, oldValue) {
-      newValue = parseInt (newValue, 10)
-      oldValue = parseInt (oldValue, 10)
-      if (newValue < oldValue) { // user removed some processes from the list
-        const delta = oldValue - newValue
-        this.processes.splice (-delta, delta)
-      } else
-        this.generateProcesses()
-    }
-  },
-  mounted() {
-    this.generateProcesses()
-    window.addEventListener ('resize', this.onWindowResized)
-  },
-  beforeDestroy() {
-    window.removeEventListener ('resize', this.onWindowResized)
   }
 }
 </script>

@@ -43,6 +43,7 @@
             input(
               type="number" min="0" max="50"
               v-model.number="process.arrival" :id="'arrival-p' + n"
+              v-on:keyup.enter="simulateAll"
             )
         .row
           .col: label(:for="'duration-p' + n") Durata:
@@ -50,6 +51,7 @@
             input(
               type="number" min="0" max="20"
               v-model.number="process.duration" :id="'duration-p' + n"
+              v-on:keyup.enter="simulateAll"
             )
             .spacer
   transition(name="fade" mode="out-in" @enter="simulateAll")

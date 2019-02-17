@@ -7,10 +7,10 @@
     em
       | Realizzato da
       i.fas.fa-pencil-alt
-      | #[span Roberto Frenna]
+      | #[a(href="https://roberto.frenna.pro") Roberto Frenna]
       | – docente
       i.fas.fa-graduation-cap
-      | #[span Walter Balzano] – corso di
+      | #[a(href="https://sites.google.com/site/walterbalzano/") Walter Balzano] – corso di
       i.fas.fa-university
       | #[span Sistemi Operativi]
   section.configuration.bg-2.with-border-top
@@ -72,7 +72,7 @@
             }`
           )
             .algorithm-name-container
-              | #[i.fas.fa-chevron-circle-right] 
+              | #[i.fas.fa-chevron-circle-right]&nbsp;
               span.algorithm-name(v-tooltip="metadata.tooltip")
                 | {{ metadata.name }}
             .algorithm-props
@@ -89,7 +89,7 @@
                     classes: ['small']
                   }`
                 )
-                  | #[i.fas.fa-clock] #[span {{ data.averageWaitingTime.toLocaleString() }}]
+                  | #[i.fas.fa-clock]&nbsp;#[span {{ data.averageWaitingTime.toLocaleString() }}]
             .clearfix
         .chart-container(:class="algorithmName")
           div(:ref="algorithmName")
@@ -152,9 +152,13 @@ body, #app, .main-container {
       i {
         margin: 0 4px;
       }
-      span {
+      a, span {
         color: #70beff;
         font-weight: bold;
+        text-decoration: none;
+      }
+      a {
+        cursor: pointer;
       }
     }
   }
@@ -220,7 +224,7 @@ body, #app, .main-container {
         border: 0;
         border-bottom: 1px white dotted;
         color: #fff;
-        width: 2rem;
+        width: 2.2rem;
         font-size: inherit;
         margin-left: 4px;
       }

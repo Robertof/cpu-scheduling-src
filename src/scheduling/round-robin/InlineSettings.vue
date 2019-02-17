@@ -3,9 +3,7 @@ span.round-robin-cfg(v-tooltip=`
   'Il parametro "q" (quantum) indica la quantità di tempo del processore allocata ad ogni ' +
   'processo. Per valori grandi di "q", il round robin si comporta come il FCFS.'
 `)
-  span q =
-  |
-  |
+  span q =&nbsp;
   input(type="number" min="0" max="100" v-model.number="quantum")
 </template>
 

@@ -238,7 +238,7 @@ body, #app, .main-container {
 
   .scheduling-algorithm {
     color: #fff;
-    padding: 4px;
+    padding: 4px 8px;
     font-size: 1rem;
     .algorithm-name-container {
       float: left;

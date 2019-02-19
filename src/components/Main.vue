@@ -295,6 +295,7 @@ body, #app, .main-container {
     border-top: 1px white solid;
     user-select: none;
     cursor: default;
+    text-align: center;
     i {
       color: lightgreen;
       cursor: pointer;

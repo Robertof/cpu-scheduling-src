@@ -34,7 +34,7 @@
         )
     span(v-if="false") } // fixes syntax highlighting in sublime text
     .row.process-config
-      .col-sm(v-for="(process, n) in processes")
+      .col-sm.col-6(v-for="(process, n) in processes")
         span.process-name
           | #[i.fas.fa-stopwatch] {{ process.name }}
         .row

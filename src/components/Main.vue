@@ -481,6 +481,7 @@ function processSimulationResults (simulationResults) {
 }
 
 let adjustedColorScale
+let cachedWidth
 
 export default {
   name: 'Homepage',
@@ -514,9 +515,11 @@ export default {
   mounted() {
     this.generateProcesses()
     window.addEventListener ('resize', this.onWindowResized)
+    window.addEventListener ('orientationchange', this.onWindowResized)
   },
   beforeDestroy() {
     window.removeEventListener ('resize', this.onWindowResized)
+    window.removeEventListener ('orientationchange', this.onWindowResized)
   },
   methods: {
     generateProcesses ({ fromScratch } = {}) {
@@ -576,12 +579,16 @@ export default {
       for (let algorithm in schedulingAlgorithms) {
         this.simulate (algorithm)
       }
+      cachedWidth = window.innerWidth
     },
     onSchedulerConfigurationChanged (scheduler, newConfiguration) {
       this.schedulerData[scheduler].config = newConfiguration
       this.simulate (scheduler)
     },
     onWindowResized: debounce (function() {
+      if (cachedWidth && window.innerWidth === cachedWidth)
+        return
+      cachedWidth = window.innerWidth
       for (let algorithmName in this.schedulerData)
         this.schedulerData[algorithmName].timeline &&
           this.schedulerData[algorithmName].timeline.width (window.innerWidth)

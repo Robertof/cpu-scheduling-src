@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "main.js",
   "repository": "Robertof/cpu-scheduling-src",
+  "description": "Easily schedule and plot arbitrary processes using FCFS, SJF and RR.",
   "author": "Roberto Frenna <roberto@frenna.pro>",
-  "license": "MIT",
+  "license": null,
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.7.1",
     "babel-eslint": "^10.0.1",
